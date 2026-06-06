@@ -2,7 +2,8 @@
 
 A local web app that turns product photos into ready-to-publish listings for **eBay** and **Kleinanzeigen** using Claude AI vision. Upload one or more photos, get a complete listing draft with title, HTML description, tags, and a market price suggestion — all in German.
 
-![Screenshot placeholder](docs/screenshot.png)
+<img width="1439" height="784" alt="image" src="https://github.com/user-attachments/assets/fbe5e8e9-a027-4028-8214-5d02177a0022" />
+
 
 ## Features
 
