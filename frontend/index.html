@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inserat-Tool</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="header__title">Inserat-Tool</h1>
+      <p class="header__subtitle">Inserate automatisch aus Fotos erstellen</p>
+    </header>
+
+    <main class="main">
+
+      <!-- Upload Section -->
+      <section id="upload-section" class="card">
+        <div class="dropzone" id="dropzone">
+          <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+          </svg>
+          <p class="dropzone__text">Bilder hierher ziehen oder <span class="dropzone__link">auswählen</span></p>
+          <p class="dropzone__hint">JPG, PNG, WEBP – mehrere Bilder möglich</p>
+          <input type="file" id="file-input" multiple accept="image/*" hidden>
+        </div>
+
+        <div class="preview-grid" id="preview-grid"></div>
+
+        <div class="upload-actions" id="upload-actions" hidden>
+          <button class="btn btn--secondary" id="clear-btn">Zurücksetzen</button>
+          <button class="btn btn--primary" id="analyze-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+            </svg>
+            Inserat erstellen
+          </button>
+        </div>
+      </section>
+
+      <!-- Loading Section -->
+      <section id="loading-section" class="card loading-card" hidden>
+        <div class="spinner"></div>
+        <p class="loading-text">KI analysiert deine Bilder…</p>
+        <p class="loading-hint">Das dauert ca. 10–20 Sekunden</p>
+      </section>
+
+      <!-- Review Section -->
+      <section id="review-section" hidden>
+
+        <!-- Analysis Summary -->
+        <div class="card analysis-card" id="analysis-summary"></div>
+
+        <!-- Tabs -->
+        <div class="card">
+          <div class="tabs">
+            <button class="tab tab--active" data-tab="ebay">eBay</button>
+            <button class="tab" data-tab="kleinanzeigen">Kleinanzeigen</button>
+          </div>
+
+          <!-- eBay Form -->
+          <div class="tab-content" id="tab-ebay">
+            <div class="form-group">
+              <label class="form-label" for="ebay-titel">Titel</label>
+              <div class="input-wrapper">
+                <input type="text" id="ebay-titel" class="form-input" maxlength="80">
+                <span class="char-counter" id="ebay-titel-count">0/80</span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="ebay-preis">Preis (€)</label>
+                <input type="number" id="ebay-preis" class="form-input" min="0" step="0.01" placeholder="0,00">
+                <div id="ebay-preis-info" class="preis-info"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ebay-zustand">Zustand</label>
+                <select id="ebay-zustand" class="form-select">
+                  <option value="Neu">Neu</option>
+                  <option value="Wie neu">Wie neu</option>
+                  <option value="Sehr gut">Sehr gut</option>
+                  <option value="Gut">Gut</option>
+                  <option value="Akzeptabel">Akzeptabel</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Versand / Abholung</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="ebay-versand" value="Versand" checked> Versand
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="ebay-versand" value="Abholung"> Abholung
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="ebay-versand" value="Versand und Abholung"> Beides
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ebay-kategorie">Kategorie-ID</label>
+              <input type="text" id="ebay-kategorie" class="form-input" placeholder="z.B. 9355">
+            </div>
+
+            <div class="form-group">
+              <div class="label-row">
+                <label class="form-label" for="ebay-beschreibung">Beschreibung (HTML)</label>
+                <button type="button" class="btn-link" id="ebay-preview-toggle">Vorschau anzeigen</button>
+              </div>
+              <textarea id="ebay-beschreibung" class="form-textarea form-textarea--tall"></textarea>
+              <div class="beschreibung-preview" id="ebay-beschreibung-preview" hidden></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tags</label>
+              <div class="tags-container" id="ebay-tags"></div>
+            </div>
+
+            <button class="btn btn--success btn--full" id="ebay-confirm-btn">
+              Inserat bestätigen (eBay)
+            </button>
+          </div>
+
+          <!-- Kleinanzeigen Form -->
+          <div class="tab-content" id="tab-kleinanzeigen" hidden>
+            <div class="form-group">
+              <label class="form-label" for="ka-titel">Titel</label>
+              <div class="input-wrapper">
+                <input type="text" id="ka-titel" class="form-input" maxlength="60">
+                <span class="char-counter" id="ka-titel-count">0/60</span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="ka-preis">Preis (€)</label>
+                <input type="number" id="ka-preis" class="form-input" min="0" step="0.01" placeholder="0,00">
+                <div id="ka-preis-info" class="preis-info"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ka-zustand">Zustand</label>
+                <select id="ka-zustand" class="form-select">
+                  <option value="Neu">Neu</option>
+                  <option value="Wie neu">Wie neu</option>
+                  <option value="Sehr gut">Sehr gut</option>
+                  <option value="Gut">Gut</option>
+                  <option value="Akzeptabel">Akzeptabel</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Versand / Abholung</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="ka-versand" value="Versand" checked> Versand
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="ka-versand" value="Abholung"> Abholung
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="ka-versand" value="Versand und Abholung"> Beides
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ka-kategorie">Kategorie</label>
+              <input type="text" id="ka-kategorie" class="form-input" placeholder="z.B. Elektronik > Handys">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ka-beschreibung">Beschreibung</label>
+              <textarea id="ka-beschreibung" class="form-textarea form-textarea--tall"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tags</label>
+              <div class="tags-container" id="ka-tags"></div>
+            </div>
+
+            <button class="btn btn--success btn--full" id="ka-confirm-btn">
+              Inserat bestätigen (Kleinanzeigen)
+            </button>
+          </div>
+        </div>
+
+        <div class="review-actions">
+          <button class="btn btn--secondary" id="new-btn">Neues Inserat erstellen</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

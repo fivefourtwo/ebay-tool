@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(claude-api)",
+      "Bash([ -d \"$VENV\" ])",
+      "Bash('/Users/fabris/Documents/04_Projekte \\(Privat\\)/ebay_tool/.venv/bin/pip' install requests==2.32.3)",
+      "Bash(python3 -m pip install requests==2.32.3)"
+    ]
+  }
+}
