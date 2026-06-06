@@ -128,18 +128,13 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Versand / Abholung</label>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input type="radio" name="ebay-versand" value="Versand" checked> Versand
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="ebay-versand" value="Abholung"> Abholung
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="ebay-versand" value="Versand und Abholung"> Beides
-                </label>
-              </div>
+              <label class="form-label" for="ebay-versand-policy">Versandoption</label>
+              <select id="ebay-versand-policy" class="form-select">
+                <option value="258528399010">Brief (1,99 EUR)</option>
+                <option value="258528725010">Päckchen (3,99 EUR)</option>
+                <option value="258528333010" selected>Paket (6,99 EUR)</option>
+                <option value="258529473010">Nur Abholung</option>
+              </select>
             </div>
 
             <div class="form-group">
@@ -162,8 +157,9 @@
             </div>
 
             <button class="btn btn--success btn--full" id="ebay-confirm-btn">
-              Inserat bestätigen (eBay)
+              Inserat auf eBay veröffentlichen
             </button>
+            <div id="ebay-publish-result" class="publish-result" hidden></div>
           </div>
 
           <!-- Kleinanzeigen Form -->

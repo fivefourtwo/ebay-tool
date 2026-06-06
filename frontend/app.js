@@ -365,10 +365,47 @@ function renderForm(platform, listing, zustand, preisrecherche) {
 }
 
 // -- Confirm buttons --
-document.getElementById('ebay-confirm-btn').addEventListener('click', () => {
-  const data = collectForm('ebay');
-  console.log('[eBay] Inserat:', data);
-  alert('eBay-Inserat gespeichert (siehe Konsole).');
+document.getElementById('ebay-confirm-btn').addEventListener('click', async () => {
+  const listing   = collectForm('ebay');
+  const resultEl  = document.getElementById('ebay-publish-result');
+  const btn       = document.getElementById('ebay-confirm-btn');
+
+  btn.disabled    = true;
+  btn.textContent = 'Wird veröffentlicht...';
+  resultEl.hidden = true;
+
+  try {
+    const res = await fetch('/api/publish/ebay', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        listing,
+        image_paths: analysisResult ? (analysisResult.image_paths || []) : [],
+      }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      resultEl.className = 'publish-result publish-result--success';
+      resultEl.innerHTML =
+        'Erfolgreich veröffentlicht! ' +
+        '<a href="' + esc(data.listing_url) + '" target="_blank" rel="noopener">' +
+        'Inserat auf eBay ansehen &rarr;</a>';
+    } else {
+      resultEl.className = 'publish-result publish-result--error';
+      resultEl.innerHTML =
+        '<strong>Fehler:</strong> ' + esc(data.error) +
+        (data.details ? '<br><code>' + esc(data.details) + '</code>' : '');
+    }
+    resultEl.hidden = false;
+  } catch (err) {
+    resultEl.className  = 'publish-result publish-result--error';
+    resultEl.textContent= 'Netzwerkfehler: ' + err.message;
+    resultEl.hidden     = false;
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Inserat auf eBay veröffentlichen';
+  }
 });
 
 document.getElementById('ka-confirm-btn').addEventListener('click', () => {
@@ -378,20 +415,28 @@ document.getElementById('ka-confirm-btn').addEventListener('click', () => {
 });
 
 function collectForm(platform) {
-  const prefix      = platform === 'ebay' ? 'ebay' : 'ka';
-  const versandRadio= document.querySelector('input[name="' + prefix + '-versand"]:checked');
+  const isEbay = platform === 'ebay';
+  const prefix = isEbay ? 'ebay' : 'ka';
+  const versandRadio = document.querySelector('input[name="' + prefix + '-versand"]:checked');
 
-  return {
+  const base = {
     plattform:    platform,
     titel:        document.getElementById(prefix + '-titel').value,
     beschreibung: document.getElementById(prefix + '-beschreibung').value,
     preis:        parseFloat(document.getElementById(prefix + '-preis').value) || 0,
     zustand:      document.getElementById(prefix + '-zustand').value,
-    versand:      versandRadio ? versandRadio.value : '',
     kategorie:    document.getElementById(prefix + '-kategorie').value,
     tags:         Array.from(document.querySelectorAll('#' + prefix + '-tags .tag')).map(t => t.textContent),
     analyse:      analysisResult ? analysisResult.analyse : {},
   };
+
+  if (isEbay) {
+    base.versand_policy_id = document.getElementById('ebay-versand-policy').value;
+  } else {
+    base.versand = versandRadio ? versandRadio.value : '';
+  }
+
+  return base;
 }
 
 // -- Utils --

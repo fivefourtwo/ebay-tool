@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv, set_key
@@ -10,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from modules.ebay_auth import exchange_code_for_token, get_auth_url
+from modules.ebay_publisher import publish_to_ebay
 from modules.image_analyzer import analyze_images
 from modules.listing_generator import generate_listing
 from modules.price_researcher import research_price
@@ -32,6 +34,9 @@ app.add_middleware(
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 ENV_PATH     = Path(__file__).parent.parent / ".env"
+# Images are kept here after analysis so the publish endpoint can re-use them.
+UPLOADS_DIR  = Path(__file__).parent / "uploads"
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 
 # ── Analyze ────────────────────────────────────────────────────────────────────
@@ -41,16 +46,16 @@ async def analyze(images: list[UploadFile] = File(...)):
     if not images:
         raise HTTPException(status_code=400, detail="Keine Bilder hochgeladen")
 
-    tmp_dir = tempfile.mkdtemp()
+    session_dir = UPLOADS_DIR / str(uuid.uuid4())
+    session_dir.mkdir()
     try:
         image_paths = []
         for image in images:
             suffix = Path(image.filename or "image.jpg").suffix or ".jpg"
-            tmp_path = os.path.join(tmp_dir, f"{len(image_paths)}{suffix}")
+            dest = session_dir / f"{len(image_paths)}{suffix}"
             content = await image.read()
-            with open(tmp_path, "wb") as f:
-                f.write(content)
-            image_paths.append(tmp_path)
+            dest.write_bytes(content)
+            image_paths.append(str(dest))
 
         analyse        = analyze_images(image_paths)
         ebay           = generate_listing(analyse, "ebay")
@@ -62,11 +67,27 @@ async def analyze(images: list[UploadFile] = File(...)):
             "ebay":           ebay,
             "kleinanzeigen":  kleinanzeigen,
             "preisrecherche": preisrecherche,
+            "image_paths":    image_paths,
         }
     except Exception as e:
+        shutil.rmtree(session_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+# ── eBay Publishing ────────────────────────────────────────────────────────────
+
+class PublishEbayBody(BaseModel):
+    listing:     dict
+    image_paths: list[str]
+
+
+@app.post("/api/publish/ebay")
+async def publish_ebay(body: PublishEbayBody):
+    for path in body.image_paths:
+        if not Path(path).is_file():
+            raise HTTPException(status_code=400, detail=f"Bilddatei nicht gefunden: {path}")
+    result = publish_to_ebay(body.listing, body.image_paths)
+    return result
 
 
 # ── eBay OAuth ─────────────────────────────────────────────────────────────────
@@ -78,8 +99,7 @@ async def ebay_auth():
 
 @app.get("/auth/ebay/status")
 async def ebay_status():
-    connected = bool(os.environ.get("EBAY_ACCESS_TOKEN", ""))
-    return {"connected": connected}
+    return {"connected": bool(os.environ.get("EBAY_ACCESS_TOKEN", ""))}
 
 
 class CallbackBody(BaseModel):
@@ -95,8 +115,6 @@ async def ebay_callback(body: CallbackBody):
 
     set_key(str(ENV_PATH), "EBAY_ACCESS_TOKEN",  tokens["access_token"])
     set_key(str(ENV_PATH), "EBAY_REFRESH_TOKEN", tokens["refresh_token"])
-
-    # Make tokens available in the current process without restart
     os.environ["EBAY_ACCESS_TOKEN"]  = tokens["access_token"]
     os.environ["EBAY_REFRESH_TOKEN"] = tokens["refresh_token"]
 
