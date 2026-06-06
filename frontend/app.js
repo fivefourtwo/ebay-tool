@@ -1,5 +1,81 @@
 'use strict';
 
+// -- eBay OAuth --
+(async function initEbayConnect() {
+  const section   = document.getElementById('ebay-connect-section');
+  const step1     = document.getElementById('connect-step-1');
+  const step2     = document.getElementById('connect-step-2');
+  const step3     = document.getElementById('connect-step-3');
+  const connectBtn= document.getElementById('connect-ebay-btn');
+  const codeInput = document.getElementById('oauth-code-input');
+  const saveBtn   = document.getElementById('save-token-btn');
+  const errorEl   = document.getElementById('connect-error');
+
+  // Check current status
+  try {
+    const res  = await fetch('/auth/ebay/status');
+    const data = await res.json();
+    if (data.connected) return; // already connected, keep section hidden
+  } catch (_) {}
+
+  section.hidden = false;
+
+  // Step 1: open eBay auth in new tab
+  connectBtn.addEventListener('click', async () => {
+    try {
+      const res  = await fetch('/auth/ebay');
+      const data = await res.json();
+      window.open(data.auth_url, '_blank');
+      step1.hidden = true;
+      step2.hidden = false;
+    } catch (err) {
+      alert('Fehler beim Laden der Auth-URL: ' + err.message);
+    }
+  });
+
+  // Step 2: exchange code
+  saveBtn.addEventListener('click', async () => {
+    const raw  = codeInput.value.trim();
+    if (!raw) return;
+
+    // Accept either the bare code or the full query string / URL
+    let code = raw;
+    try {
+      const params = new URLSearchParams(
+        raw.includes('?') ? raw.split('?')[1] : raw.startsWith('code=') ? raw : 'code=' + raw
+      );
+      if (params.get('code')) code = params.get('code');
+    } catch (_) {}
+
+    errorEl.hidden = true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Wird gespeichert...';
+
+    try {
+      const res = await fetch('/auth/ebay/callback', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ code }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || res.statusText);
+      }
+
+      step2.hidden = true;
+      step3.hidden = false;
+      // Fade out banner after 3 s
+      setTimeout(() => { section.hidden = true; }, 3000);
+    } catch (err) {
+      errorEl.textContent = 'Fehler: ' + err.message;
+      errorEl.hidden      = false;
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'Token speichern';
+    }
+  });
+})();
+
 // -- State --
 let selectedFiles = [];
 let analysisResult = null;

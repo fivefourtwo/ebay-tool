@@ -45,6 +45,59 @@ body {
   margin-bottom: 16px;
 }
 
+/* eBay Connect Banner */
+.connect-card {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+.connect-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.connect-icon {
+  width: 22px;
+  height: 22px;
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.connect-title    { font-weight: 700; color: #92400e; }
+.connect-subtitle { font-size: .85rem; color: #b45309; margin-top: 2px; }
+.connect-step     { margin-top: 8px; }
+.connect-hint {
+  font-size: .85rem;
+  color: var(--color-muted);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.connect-hint code {
+  background: #f1f5f9;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: .8rem;
+}
+.connect-input-row {
+  display: flex;
+  gap: 8px;
+}
+.connect-input-row .form-input { flex: 1; font-family: monospace; font-size: .8rem; }
+.connect-error {
+  margin-top: 8px;
+  font-size: .82rem;
+  color: #dc2626;
+}
+.connect-success {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
 /* Dropzone */
 .dropzone {
   border: 2px dashed var(--color-border);
