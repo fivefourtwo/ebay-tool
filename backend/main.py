@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv, set_key
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -13,6 +13,8 @@ from pydantic import BaseModel
 from modules.ebay_auth import exchange_code_for_token, get_auth_url
 from modules.ebay_publisher import publish_to_ebay
 from modules.image_analyzer import analyze_images
+from modules.kleinanzeigen_publisher import PROFILE_DIR as KA_PROFILE_DIR
+from modules.kleinanzeigen_publisher import publish_to_kleinanzeigen
 from modules.listing_generator import generate_listing
 from modules.price_researcher import research_price
 
@@ -42,9 +44,16 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 # ── Analyze ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/analyze")
-async def analyze(images: list[UploadFile] = File(...)):
+async def analyze(
+    images: list[UploadFile] = File(...),
+    platforms: str = Form("ebay,kleinanzeigen"),
+):
     if not images:
         raise HTTPException(status_code=400, detail="Keine Bilder hochgeladen")
+
+    selected = {p.strip() for p in platforms.split(",") if p.strip()}
+    if not selected:
+        raise HTTPException(status_code=400, detail="Keine Plattform ausgewählt")
 
     session_dir = UPLOADS_DIR / str(uuid.uuid4())
     session_dir.mkdir()
@@ -57,9 +66,11 @@ async def analyze(images: list[UploadFile] = File(...)):
             dest.write_bytes(content)
             image_paths.append(str(dest))
 
+        # Bildanalyse + Preisrecherche werden immer gebraucht; die platt-
+        # formspezifische Inserat-Generierung nur für die ausgewählten.
         analyse        = analyze_images(image_paths)
-        ebay           = generate_listing(analyse, "ebay")
-        kleinanzeigen  = generate_listing(analyse, "kleinanzeigen")
+        ebay           = generate_listing(analyse, "ebay") if "ebay" in selected else None
+        kleinanzeigen  = generate_listing(analyse, "kleinanzeigen") if "kleinanzeigen" in selected else None
         preisrecherche = research_price(analyse)
 
         return {
@@ -72,6 +83,22 @@ async def analyze(images: list[UploadFile] = File(...)):
     except Exception as e:
         shutil.rmtree(session_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class GenerateBody(BaseModel):
+    analyse:  dict
+    platform: str
+
+
+@app.post("/api/generate")
+async def generate(body: GenerateBody):
+    if body.platform not in ("ebay", "kleinanzeigen"):
+        raise HTTPException(status_code=400, detail="Ungültige Plattform")
+    try:
+        listing = generate_listing(body.analyse, body.platform)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"listing": listing}
 
 
 # ── eBay Publishing ────────────────────────────────────────────────────────────
@@ -88,6 +115,30 @@ async def publish_ebay(body: PublishEbayBody):
             raise HTTPException(status_code=400, detail=f"Bilddatei nicht gefunden: {path}")
     result = publish_to_ebay(body.listing, body.image_paths)
     return result
+
+
+# ── Kleinanzeigen Publishing ─────────────────────────────────────────────────────
+
+class PublishKaBody(BaseModel):
+    listing:     dict
+    image_paths: list[str]
+
+
+# Sync-Endpoint (def, nicht async): FastAPI führt ihn im Threadpool aus, sodass
+# die Playwright-Sync-API nicht im laufenden asyncio-Loop kollidiert.
+@app.post("/api/publish/kleinanzeigen")
+def publish_kleinanzeigen(body: PublishKaBody):
+    for path in body.image_paths:
+        if not Path(path).is_file():
+            raise HTTPException(status_code=400, detail=f"Bilddatei nicht gefunden: {path}")
+    return publish_to_kleinanzeigen(body.listing, body.image_paths)
+
+
+@app.get("/auth/kleinanzeigen/status")
+async def kleinanzeigen_status():
+    # Profil existiert + enthält Daten -> es gab mindestens einen Login.
+    connected = KA_PROFILE_DIR.is_dir() and any(KA_PROFILE_DIR.iterdir())
+    return {"connected": connected}
 
 
 # ── eBay OAuth ─────────────────────────────────────────────────────────────────

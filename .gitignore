@@ -10,3 +10,8 @@ uploads/
 *.jpeg
 *.png
 *.pdf
+# Lokale Sessions / Logins – niemals committen
+backend/kleinanzeigen_profile/
+backend/kleinanzeigen_session.json
+.claude/settings.local.json
+test-images/

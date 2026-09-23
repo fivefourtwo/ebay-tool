@@ -3,237 +3,282 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inserat-Tool</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#f4f4f4">
+  <title>Inserate</title>
+  <link rel="stylesheet" href="vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css?v=20260923-minimal2">
 </head>
 <body>
-  <div class="app">
-    <header class="header">
-      <h1 class="header__title">Inserat-Tool</h1>
-      <p class="header__subtitle">Inserate automatisch aus Fotos erstellen</p>
-    </header>
-
-    <main class="main">
-
-      <!-- eBay Connect Banner -->
-      <section id="ebay-connect-section" class="card connect-card" hidden>
-        <div class="connect-header">
-          <svg class="connect-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/>
-          </svg>
-          <div>
-            <p class="connect-title">eBay ist nicht verbunden</p>
-            <p class="connect-subtitle">Fuer das Veroeffentlichen auf eBay wird ein OAuth-Token benoetigt.</p>
-          </div>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    </defs>
+  </svg>
+  <a href="#main-content" class="skip-link">Zum Inhalt</a>
+  <header class="app-header">
+    <span class="app-name">Inserate</span>
+    <button id="accounts-toggle" class="text-button" aria-expanded="false" aria-controls="page-connections">Konten</button>
+  </header>
+  <main id="main-content" tabindex="-1">
+        <div id="app-message" class="app-message" role="alert" tabindex="-1" hidden>
+      <span id="app-message-text"></span>
+      <button class="icon-button" id="dismiss-message" aria-label="Meldung schließen">×</button>
         </div>
-
-        <div class="connect-step" id="connect-step-1">
-          <button class="btn btn--primary" id="connect-ebay-btn">Mit eBay verbinden</button>
+        <section id="page-connections" class="accounts" aria-labelledby="accounts-title" hidden>
+        <div class="section-header"><h2 id="accounts-title">Konten</h2><button class="text-button" id="refresh-connections">Aktualisieren</button>
         </div>
-
-        <div class="connect-step" id="connect-step-2" hidden>
-          <p class="connect-hint">
-            Melde dich bei eBay an und kopiere anschliessend den <code>code</code>-Parameter
-            aus der Weiterleitungs-URL.
-          </p>
-          <div class="connect-input-row">
-            <input type="text" id="oauth-code-input" class="form-input"
-              placeholder="code=v%5E1.1%23i%5E1%23f%5E0..." spellcheck="false">
-            <button class="btn btn--primary" id="save-token-btn">Token speichern</button>
-          </div>
-          <p class="connect-error" id="connect-error" hidden></p>
+        <div class="account-row">
+        <h3>eBay</h3><span class="connection-badge" id="ebay-connection-badge">Wird geprüft …</span>
         </div>
-
-        <div class="connect-step connect-success" id="connect-step-3" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
-          </svg>
-          eBay erfolgreich verbunden
+        <div id="ebay-connect-section" hidden>
+        <div id="connect-step-1"><button class="btn btn-outline-secondary" id="connect-ebay-btn">eBay verbinden</button>
         </div>
-      </section>
-
-      <!-- Upload Section -->
-      <section id="upload-section" class="card">
-        <div class="dropzone" id="dropzone">
-          <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
-          </svg>
-          <p class="dropzone__text">Bilder hierher ziehen oder <span class="dropzone__link">auswählen</span></p>
-          <p class="dropzone__hint">JPG, PNG, WEBP – mehrere Bilder möglich</p>
-          <input type="file" id="file-input" multiple accept="image/*" hidden>
+        <form id="connect-step-2" hidden>
+          <a id="oauth-reopen-link" class="btn-link" target="_blank" rel="noopener noreferrer" hidden>Anmeldung öffnen ↗</a>
+        <label class="form-label" for="oauth-code-input">Weiterleitungs-URL oder Code</label>
+        <div class="connect-input-row">
+        <input class="form-control" id="oauth-code-input" required autocomplete="off" spellcheck="false"><button class="btn btn-primary" id="save-token-btn" type="submit">Speichern</button>
         </div>
-
-        <div class="preview-grid" id="preview-grid"></div>
-
-        <div class="upload-actions" id="upload-actions" hidden>
-          <button class="btn btn--secondary" id="clear-btn">Zurücksetzen</button>
-          <button class="btn btn--primary" id="analyze-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
-            </svg>
-            Inserat erstellen
-          </button>
+        </form>
         </div>
-      </section>
-
-      <!-- Loading Section -->
-      <section id="loading-section" class="card loading-card" hidden>
-        <div class="spinner"></div>
-        <p class="loading-text">KI analysiert deine Bilder…</p>
-        <p class="loading-hint">Das dauert ca. 10–20 Sekunden</p>
-      </section>
-
-      <!-- Review Section -->
-      <section id="review-section" hidden>
-
-        <!-- Analysis Summary -->
-        <div class="card analysis-card" id="analysis-summary"></div>
-
-        <!-- Tabs -->
-        <div class="card">
-          <div class="tabs">
-            <button class="tab tab--active" data-tab="ebay">eBay</button>
-            <button class="tab" data-tab="kleinanzeigen">Kleinanzeigen</button>
-          </div>
-
-          <!-- eBay Form -->
-          <div class="tab-content" id="tab-ebay">
-            <div class="form-group">
-              <label class="form-label" for="ebay-titel">Titel</label>
-              <div class="input-wrapper">
-                <input type="text" id="ebay-titel" class="form-input" maxlength="80">
-                <span class="char-counter" id="ebay-titel-count">0/80</span>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="ebay-preis">Preis (€)</label>
-                <input type="number" id="ebay-preis" class="form-input" min="0" step="0.01" placeholder="0,00">
-                <div id="ebay-preis-info" class="preis-info"></div>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="ebay-zustand">Zustand</label>
-                <select id="ebay-zustand" class="form-select">
-                  <option value="Neu">Neu</option>
-                  <option value="Wie neu">Wie neu</option>
-                  <option value="Sehr gut">Sehr gut</option>
-                  <option value="Gut">Gut</option>
-                  <option value="Akzeptabel">Akzeptabel</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="ebay-versand-policy">Versandoption</label>
-              <select id="ebay-versand-policy" class="form-select">
-                <option value="258528399010">Brief (1,99 EUR)</option>
-                <option value="258528725010">Päckchen (3,99 EUR)</option>
-                <option value="258528333010" selected>Paket (6,99 EUR)</option>
-                <option value="258529473010">Nur Abholung</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="ebay-kategorie">Kategorie-ID</label>
-              <input type="text" id="ebay-kategorie" class="form-input" placeholder="z.B. 9355">
-            </div>
-
-            <div class="form-group">
-              <div class="label-row">
-                <label class="form-label" for="ebay-beschreibung">Beschreibung (HTML)</label>
-                <button type="button" class="btn-link" id="ebay-preview-toggle">Vorschau anzeigen</button>
-              </div>
-              <textarea id="ebay-beschreibung" class="form-textarea form-textarea--tall"></textarea>
-              <div class="beschreibung-preview" id="ebay-beschreibung-preview" hidden></div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Tags</label>
-              <div class="tags-container" id="ebay-tags"></div>
-            </div>
-
-            <button class="btn btn--success btn--full" id="ebay-confirm-btn">
-              Inserat auf eBay veröffentlichen
-            </button>
-            <div id="ebay-publish-result" class="publish-result" hidden></div>
-          </div>
-
-          <!-- Kleinanzeigen Form -->
-          <div class="tab-content" id="tab-kleinanzeigen" hidden>
-            <div class="form-group">
-              <label class="form-label" for="ka-titel">Titel</label>
-              <div class="input-wrapper">
-                <input type="text" id="ka-titel" class="form-input" maxlength="60">
-                <span class="char-counter" id="ka-titel-count">0/60</span>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="ka-preis">Preis (€)</label>
-                <input type="number" id="ka-preis" class="form-input" min="0" step="0.01" placeholder="0,00">
-                <div id="ka-preis-info" class="preis-info"></div>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="ka-zustand">Zustand</label>
-                <select id="ka-zustand" class="form-select">
-                  <option value="Neu">Neu</option>
-                  <option value="Wie neu">Wie neu</option>
-                  <option value="Sehr gut">Sehr gut</option>
-                  <option value="Gut">Gut</option>
-                  <option value="Akzeptabel">Akzeptabel</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Versand / Abholung</label>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input type="radio" name="ka-versand" value="Versand" checked> Versand
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="ka-versand" value="Abholung"> Abholung
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="ka-versand" value="Versand und Abholung"> Beides
-                </label>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="ka-kategorie">Kategorie</label>
-              <input type="text" id="ka-kategorie" class="form-input" placeholder="z.B. Elektronik > Handys">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="ka-beschreibung">Beschreibung</label>
-              <textarea id="ka-beschreibung" class="form-textarea form-textarea--tall"></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Tags</label>
-              <div class="tags-container" id="ka-tags"></div>
-            </div>
-
-            <button class="btn btn--success btn--full" id="ka-confirm-btn">
-              Inserat bestätigen (Kleinanzeigen)
-            </button>
-          </div>
+        <p id="connect-step-3" class="visually-hidden" hidden>eBay-Zugang gespeichert.</p>
+        <p class="field-error" id="connect-error" role="alert" hidden>
+        </p>
+        <div class="account-row"><h3>Kleinanzeigen</h3><span class="connection-badge" id="ka-connection-badge">Wird geprüft …</span>
         </div>
-
-        <div class="review-actions">
-          <button class="btn btn--secondary" id="new-btn">Neues Inserat erstellen</button>
+        <p class="field-hint" id="ka-status-text">
+        </p>
+        </section>
+        <section id="page-studio">
+        <div class="page-heading"><h1 id="page-title" tabindex="-1">Neues Inserat</h1><button class="text-button" id="new-btn" hidden>Neues Inserat</button>
         </div>
-      </section>
-
-    </main>
-  </div>
-
-  <script src="app.js"></script>
+        <section id="upload-section" aria-label="Fotos und Plattformen">
+        <div class="label-row">
+        <label class="form-label" for="file-input">Fotos</label><span id="photo-count" class="muted" aria-live="polite">0 / 12</span>
+        </div>
+        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp" hidden>
+        <button class="dropzone" id="dropzone" type="button" aria-describedby="upload-help">
+          <span>Fotos auswählen <span class="muted">oder hierher ziehen</span></span>
+          <small id="upload-help">JPG, PNG, WEBP · max. 10 MB</small>
+        </button>
+        <div class="preview-grid" id="preview-grid" aria-label="Ausgewählte Fotos">
+        </div>
+        <p class="field-error" id="upload-error" role="alert" hidden>
+        </p>
+        <div class="upload-meta" id="upload-meta" hidden><button class="text-button" id="clear-btn" type="button">Alle entfernen</button>
+        </div>
+        <div class="upload-actions">
+        <fieldset class="platform-select"><legend class="visually-hidden">Plattformen</legend>
+        <label>
+        <input class="form-check-input" type="checkbox" id="platform-ebay" value="ebay" checked>eBay</label>
+        <label>
+        <input class="form-check-input" type="checkbox" id="platform-kleinanzeigen" value="kleinanzeigen" checked>Kleinanzeigen</label>
+        </fieldset>
+          <button class="btn btn-primary" id="analyze-btn" disabled>Inserat erstellen</button>
+        </div>
+        <p class="field-error" id="platform-hint" hidden>Mindestens eine Plattform auswählen.</p>
+        </section>
+        <section id="loading-section" aria-labelledby="loading-title" hidden>
+        <h2 id="loading-title" tabindex="-1">Inserat wird erstellt …</h2>
+        <div class="loading-track" aria-hidden="true"><span></span>
+        </div>
+        <p id="loading-hint" class="muted" role="status">
+        </p>
+        </section>
+        <section id="review-section" aria-label="Inserat bearbeiten" hidden>
+        <div class="review-toolbar">
+        <div id="review-photos" class="review-photos">
+        </div><span id="draft-status" class="muted" role="status"></span>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Plattform">
+          <button class="tab tab--active" id="tab-button-ebay" data-tab="ebay" role="tab" aria-selected="true" aria-controls="tab-ebay">eBay <span class="tab-state" id="ebay-tab-state"></span></button>
+          <button class="tab" id="tab-button-kleinanzeigen" data-tab="kleinanzeigen" role="tab" aria-selected="false" aria-controls="tab-kleinanzeigen" tabindex="-1">Kleinanzeigen <span class="tab-state" id="ka-tab-state"></span></button>
+        </div>
+        <details id="review-context" class="research-details"><summary>Artikel & Preisvergleich</summary>
+        <div class="research-grid">
+        <div id="analysis-summary">
+        </div>
+        <div id="price-research">
+        </div>
+        </div>
+        </details>
+        <div class="tab-content" id="tab-ebay" role="tabpanel" aria-labelledby="tab-button-ebay" >
+        <div id="ebay-generate-prompt" class="generate-prompt" hidden><button class="btn btn-primary" id="ebay-generate-btn" type="button">Entwurf erstellen</button>
+        </div>
+        <form id="ebay-fields" novalidate>
+        <fieldset id="ebay-fieldset"><legend class="visually-hidden">Inserat für eBay bearbeiten</legend>
+        <div class="form-group">
+        <label class="form-label" for="ebay-titel">Titel</label>
+        <div class="input-wrapper">
+        <input class="form-control" id="ebay-titel" maxlength="80" required aria-describedby="ebay-titel-count ebay-titel-error"><span class="char-counter" id="ebay-titel-count">0 / 80</span>
+        </div>
+        <p class="field-hint" id="ebay-titel-hint">
+        </p>
+        <p class="field-error" id="ebay-titel-error" hidden>
+        </p>
+        </div>
+        <div class="form-row">
+        <div class="form-group">
+        <label class="form-label" for="ebay-preis">Preis in €</label>
+        <input class="form-control" id="ebay-preis" type="number" min="0.01" step="0.01" required placeholder="0,00" aria-describedby="ebay-preis-error">
+        <p class="field-hint" id="ebay-preis-hint">
+        </p>
+        <p class="field-error" id="ebay-preis-error" hidden>
+        </p>
+        </div>
+        <div class="form-group">
+        <label class="form-label" for="ebay-zustand">Zustand</label>
+        <select class="form-select" id="ebay-zustand"><option>Neu</option><option>Wie neu</option><option>Sehr gut</option><option>Gut</option><option>Akzeptabel</option>
+        </select>
+        <p class="field-hint" id="ebay-zustand-hint">
+        </p>
+        <p class="field-error" id="ebay-zustand-error" hidden>
+        </p>
+        </div>
+        </div>
+        <div class="form-group">
+        <label class="form-label" for="ebay-versand-policy">Versand / Abholung</label>
+        <select class="form-select" id="ebay-versand-policy"><option value="258528399010">Brief · 1,99 €</option><option value="258528725010">Päckchen · 3,99 €</option><option value="258528333010" selected>Paket · 6,99 €</option><option value="258529473010">Nur Abholung</option>
+        </select>
+        <p class="field-hint" id="ebay-versand-policy-hint">
+        </p>
+        <p class="field-error" id="ebay-versand-policy-error" hidden>
+        </p>
+        </div>
+        <div class="form-group">
+        <div class="label-row">
+        <label class="form-label" for="ebay-beschreibung">Beschreibung</label><button type="button" class="btn-link" id="ebay-preview-toggle" aria-expanded="false" aria-controls="ebay-beschreibung-preview">Vorschau</button>
+        </div>
+        <textarea class="form-control form-textarea" id="ebay-beschreibung" required aria-describedby="ebay-beschreibung-hint ebay-beschreibung-error">
+        </textarea>
+        <p class="field-hint" id="ebay-beschreibung-hint">
+        </p>
+        <p class="field-error" id="ebay-beschreibung-error" hidden>
+        </p>
+        <iframe title="Vorschau der eBay-Beschreibung" sandbox class="beschreibung-preview" id="ebay-beschreibung-preview" hidden>
+        </iframe>
+        </div>
+        <details class="advanced"><summary>Weitere Angaben</summary>
+        <div class="form-group">
+        <label class="form-label" for="ebay-kategorie">eBay-Kategorie-ID</label>
+        <input class="form-control" id="ebay-kategorie" inputmode="numeric" pattern="[0-9]*" placeholder="z. B. 9355" aria-describedby="ebay-kategorie-hint ebay-kategorie-error">
+        <p class="field-hint" id="ebay-kategorie-hint">
+        </p>
+        <p class="field-error" id="ebay-kategorie-error" hidden>
+        </p>
+        </div>
+        <p class="form-label">Suchbegriffe</p>
+        <div class="tags-container" id="ebay-tags">
+        </div>
+        </details>
+        </fieldset>
+        <div class="publish-footer"><button class="btn btn-primary" id="ebay-confirm-btn" type="submit">Veröffentlichen</button>
+        </div>
+        </form>
+        <div id="ebay-publish-result" class="publish-result" role="status" hidden>
+        </div>
+        </div>
+        <div class="tab-content" id="tab-kleinanzeigen" role="tabpanel" aria-labelledby="tab-button-kleinanzeigen" hidden>
+        <div id="ka-generate-prompt" class="generate-prompt" hidden><button class="btn btn-primary" id="ka-generate-btn" type="button">Entwurf erstellen</button>
+        </div>
+        <form id="ka-fields" novalidate>
+        <fieldset id="ka-fieldset"><legend class="visually-hidden">Inserat für Kleinanzeigen bearbeiten</legend>
+        <div class="form-group">
+        <label class="form-label" for="ka-titel">Titel</label>
+        <div class="input-wrapper">
+        <input class="form-control" id="ka-titel" maxlength="60" required aria-describedby="ka-titel-count ka-titel-error"><span class="char-counter" id="ka-titel-count">0 / 60</span>
+        </div>
+        <p class="field-hint" id="ka-titel-hint">
+        </p>
+        <p class="field-error" id="ka-titel-error" hidden>
+        </p>
+        </div>
+        <div class="form-row">
+        <div class="form-group">
+        <label class="form-label" for="ka-preis">Preis in €</label>
+        <input class="form-control" id="ka-preis" type="number" min="0.01" step="0.01" required placeholder="0,00" aria-describedby="ka-preis-error">
+        <p class="field-hint" id="ka-preis-hint">
+        </p>
+        <p class="field-error" id="ka-preis-error" hidden>
+        </p>
+        </div>
+        <div class="form-group">
+        <label class="form-label" for="ka-zustand">Zustand</label>
+        <select class="form-select" id="ka-zustand"><option>Neu</option><option>Wie neu</option><option>Sehr gut</option><option>Gut</option><option>Akzeptabel</option>
+        </select>
+        <p class="field-hint" id="ka-zustand-hint">
+        </p>
+        <p class="field-error" id="ka-zustand-error" hidden>
+        </p>
+        </div>
+        </div>
+        <div class="form-row">
+        <div class="form-group">
+        <label class="form-label" for="ka-preistyp">Preisart</label>
+        <select class="form-select" id="ka-preistyp"><option value="NEGOTIABLE">Verhandlungsbasis</option><option value="FIXED">Festpreis</option><option value="GIVE_AWAY">Zu verschenken</option><option value="ON_REQUEST">Preis auf Anfrage</option>
+        </select>
+        <p class="field-hint" id="ka-preistyp-hint">
+        </p>
+        <p class="field-error" id="ka-preistyp-error" hidden>
+        </p>
+        </div>
+        <div class="form-group">
+        <label class="form-label" for="ka-versand">Versand / Abholung</label>
+        <select class="form-select" id="ka-versand"><option>Versand</option><option>Abholung</option><option>Versand und Abholung</option>
+        </select>
+        <p class="field-hint" id="ka-versand-hint">
+        </p>
+        <p class="field-error" id="ka-versand-error" hidden>
+        </p>
+        </div>
+        </div>
+        <div class="form-group">
+        <div class="form-group">
+        <label class="form-label" for="ka-beschreibung">Beschreibung</label>
+        <textarea class="form-control form-textarea" id="ka-beschreibung" required aria-describedby="ka-beschreibung-error">
+        </textarea>
+        <p class="field-hint" id="ka-beschreibung-hint">
+        </p>
+        <p class="field-error" id="ka-beschreibung-error" hidden>
+        </p>
+        </div>
+        </div>
+        <details class="advanced"><summary>Weitere Angaben</summary>
+        <div class="form-group">
+        <label class="form-label" for="ka-kategorie">Kategorie</label>
+        <input class="form-control" id="ka-kategorie" placeholder="z. B. Elektronik > Handys">
+        <p class="field-hint" id="ka-kategorie-hint">
+        </p>
+        <p class="field-error" id="ka-kategorie-error" hidden>
+        </p>
+        </div>
+        <p class="form-label">Suchbegriffe</p>
+        <div class="tags-container" id="ka-tags">
+        </div>
+        </details>
+        </fieldset>
+        <div class="publish-footer"><button class="btn btn-primary" id="ka-confirm-btn" type="submit">Veröffentlichen</button>
+        </div>
+        </form>
+        <div id="ka-publish-result" class="publish-result" role="status" hidden>
+        </div>
+        </div>
+        </section>
+        </section>
+  </main>
+  <dialog id="confirm-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+        <div class="dialog-heading"><h2 id="dialog-title"></h2><button class="icon-button" id="dialog-close" aria-label="Dialog schließen">×</button>
+        </div>
+        <p id="dialog-description">
+        </p>
+        <div id="dialog-details">
+        </div>
+        <div class="dialog-actions"><button class="btn btn-outline-secondary" id="dialog-cancel">Abbrechen</button><button class="btn btn-primary" id="dialog-confirm">Veröffentlichen</button>
+        </div>
+  </dialog>
+        <div id="toast" class="app-toast" role="status" hidden>
+        </div>
+  <script src="app.js?v=20260923-minimal2"></script>
 </body>
 </html>

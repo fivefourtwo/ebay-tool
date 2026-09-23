@@ -26,10 +26,11 @@ inserat-tool/
 ├── .env
 └── CLAUDE.md
 
-Aktualisiere in CLAUDE.md den Abschnitt "Aktueller Stand":
+## Aktueller Stand
 Phase 1: Upload + KI-Analyse + Review-UI ✅
 Phase 2: Preisrecherche (eBay Browse API + Kleinanzeigen Scraping) ✅
-Phase 3: eBay Publishing + Kleinanzeigen Playwright (ausstehend)
+Phase 3a: eBay Publishing (OAuth, Inventory/Offer/Publish, Kategorie- & Zustand-Auflösung via Metadata/Taxonomy-API) ✅
+Phase 3b: Kleinanzeigen Publishing via Playwright (headed, Session-Persistenz) ✅
 
 ## Hinweise
 - Alle Inserate auf Deutsch generieren

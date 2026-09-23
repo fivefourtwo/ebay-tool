@@ -1,26 +1,42 @@
 import base64
+import io
 import json
 import os
 import re
-from pathlib import Path
 
 import anthropic
 from dotenv import load_dotenv
+from PIL import Image, ImageOps
 
 load_dotenv()
 
 MODEL = "claude-sonnet-4-6"
 
+# Anthropic empfiehlt max. 1568 px an der langen Kante; größere Bilder werden
+# ohnehin serverseitig herunterskaliert. Wir verkleinern lokal vorab, damit die
+# Request-Größe (Base64!) auch bei mehreren Fotos unter dem API-Limit bleibt.
+MAX_EDGE = 1568
+JPEG_QUALITY = 85
 
-def _get_media_type(path: str) -> str:
-    ext = Path(path).suffix.lower()
+
+def _encode_image(path: str) -> dict:
+    """Lädt ein Bild, skaliert es herunter und liefert einen Base64-JPEG-Block."""
+    with Image.open(path) as img:
+        img = ImageOps.exif_transpose(img)  # EXIF-Rotation anwenden
+        img = img.convert("RGB")
+        img.thumbnail((MAX_EDGE, MAX_EDGE))  # behält Seitenverhältnis bei
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=JPEG_QUALITY)
+
+    data = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
     return {
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".png": "image/png",
-        ".gif": "image/gif",
-        ".webp": "image/webp",
-    }.get(ext, "image/jpeg")
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": data,
+        },
+    }
 
 
 def _extract_json(text: str) -> dict:
@@ -37,18 +53,7 @@ def _extract_json(text: str) -> dict:
 def analyze_images(image_paths: list[str]) -> dict:
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-    content = []
-    for path in image_paths:
-        with open(path, "rb") as f:
-            image_data = base64.standard_b64encode(f.read()).decode("utf-8")
-        content.append({
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": _get_media_type(path),
-                "data": image_data,
-            },
-        })
+    content = [_encode_image(path) for path in image_paths]
 
     content.append({
         "type": "text",
